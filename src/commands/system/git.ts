@@ -8,12 +8,10 @@ import { EmbedBuilder } from "../../utils/embed-builder.js";
 
 const REMOTE_CHOICES = [
   { name: "GitHub", value: "origin" },
-  { name: "Gitea (git.applefumi.xyz)", value: "gitea" },
 ];
 
 const REMOTE_LABELS: Record<string, string> = {
   origin: "GitHub",
-  gitea: "Gitea (git.applefumi.xyz)",
 };
 
 function gitLog(remote: string, allCommits: boolean): string {
@@ -57,7 +55,7 @@ function remoteInfo(remote: string): { repoPath: string; host: string } | null {
 export default {
   data: new SlashCommandBuilder()
     .setName("git")
-    .setDescription("ดู commits จาก remote (GitHub / Gitea)")
+    .setDescription("ดู commits จาก GitHub")
     .setDMPermission(true)
     .setContexts(0, 1, 2)
     .setIntegrationTypes(0, 1)
