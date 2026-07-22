@@ -36,6 +36,26 @@ case "${1:-}" in
         msg "ลบเรียบร้อย"
         exit 0
         ;;
+    --docker)
+        msg "เริ่ม bot ด้วย Docker..."
+        if [ ! -f .env ]; then
+            err "ไม่พบไฟล์ .env — คัดลอกจาก .env.example"
+            exit 1
+        fi
+        docker compose pull
+        docker compose up -d
+        msg "Bot กำลังทำงาน — ดู logs: docker compose logs -f"
+        exit 0
+        ;;
+    --docker-stop)
+        msg "หยุด Docker..."
+        docker compose down
+        exit 0
+        ;;
+    --docker-logs)
+        docker compose logs -f --tail=50
+        exit 0
+        ;;
 esac
 
 # ---- Normal run (no flags) ----
