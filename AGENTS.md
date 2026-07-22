@@ -104,7 +104,12 @@ if (!await adminCheck(interaction)) return;
 - Changelogs เก็บใน `changelogs/` ชื่อไฟล์ `changelog-YYYY-MM-DD-HH-MM.md` (markdown)
 
 ### Changelog rules (บังคับ)
-- **ทุก commit ต้องมี changelog** — เพิ่ม/แก้ไขไฟล์ใน `changelogs/` ทุกครั้ง
+- **ทุก commit ต้องมี changelog** — เพิ่ม/แก้ไขไฟล์ใน `changelogs/` ทุกครั้งก่อน commit และ push
+- **Agent push workflow** — ทุกครั้งที่ agent จะ commit/push ต้องทำลำดับนี้:
+  1. สร้าง/แก้ไข changelog ใน `changelogs/` ก่อนเสมอ
+  2. Stage changelog file พร้อมไฟล์ที่แก้ไข
+  3. Commit พร้อม changelog
+  4. Push
 - ถ้าวันเดียวกันมี changelog อยู่แล้ว → **append** ลงไฟล์เดิม ห้ามสร้างไฟล์ใหม่
 - ถ้าเป็นวันใหม่ → สร้างไฟล์ใหม่ `changelog-YYYY-MM-DD-HH-MM.md`
 - แต่ละรายการต้องลงท้ายด้วย commit link: `` [`short_id`](https://github.com/cltq/prsk-discord.js/commit/short_id) ``
