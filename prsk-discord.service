@@ -1,0 +1,24 @@
+[Unit]
+Description=SekaiUtils Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=bot
+Group=bot
+WorkingDirectory=/opt/prsk-discord.js
+ExecStart=/opt/prsk-discord.js/auto.sh
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/prsk-discord.js
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
