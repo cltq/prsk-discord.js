@@ -29,7 +29,7 @@ Built with **TypeScript** + **discord.js 14** + **@discordjs/voice**
 ### ยืนยันตัวตน
 | คำสั่ง | รายละเอียด |
 |---|---|
-| `/auth <secret_key>` | รับลิงก์ OAuth2 สำหรับเชื่อมต่อบอท (ตอบกลับแบบ ephemeral) |
+| `/invite` | รับลิงก์เชิญบอท (ตอบกลับแบบ ephemeral) |
 
 ### ระบบ
 | คำสั่ง | รายละเอียด |
@@ -117,7 +117,7 @@ src/
 │   ├── general/                      # /help, /info
 │   ├── voice/                        # /join, /leave, /say, /voices
 │   ├── system/                       # /uptime, /restart, /git, /changelog
-│   ├── fumi/                         # /auth, /status
+│   ├── fumi/                         # /invite, /status
 │   └── prosekai/                     # /chart, /songs, + 4 static info commands
 ├── events/
 │   ├── interaction-create.ts         # Routes slash commands + autocomplete
@@ -133,6 +133,25 @@ allowlist.txt                          # Admin allowlist (guildId: userId, usern
 guild_configs.json                     # Per-guild config (gitignored)
 ```
 
+## Systemd Service
+
+มีตัวอย่างไฟล์ `prsk-discord.service` สำหรับรัน bot เป็น systemd service:
+
+```bash
+# แก้ไข User, Group, WorkingDirectory, ExecStart ในไฟล์ให้ตรงกับระบบของคุณ
+sudo cp prsk-discord.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now prsk-discord
+
+# ดู logs
+journalctl -u prsk-discord -f
+```
+
+**สิ่งที่ต้องแก้ใน `prsk-discord.service`:**
+- `User` / `Group` — ชื่อ user ของคุณ
+- `WorkingDirectory` — path ที่เก็บโปรเจกต์
+- `ExecStart` — path ไปยัง `auto.sh`
+
 ## ตัวแปรสภาพแวดล้อม (.env)
 
 | ตัวแปร | จำเป็น | คำอธิบาย |
@@ -142,7 +161,7 @@ guild_configs.json                     # Per-guild config (gitignored)
 | `BOT_CLIENT_ID` | ✓* | Application ID สำหรับ deploy commands |
 | `MACHINE_IP` | | IP สำหรับ status check (default: 127.0.0.1) |
 | `DISCORD_CMD_AUTH_SK` | | Secret key สำหรับคำสั่ง `/auth` |
-| `DISCORD_BOT_OA2_LINK` | | ลิงก์ OAuth2 สำหรับยืนยันตัวตน |
+| `DISCORD_BOT_OA2_LINK` | | ลิงก์ OAuth2 สำหรับยืนยันตัวตน / คำสั่ง `/invite` |
 
 \* จำเป็นเฉพาะตอน run `bun run deploy`
 
