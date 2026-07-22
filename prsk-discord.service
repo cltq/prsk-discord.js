@@ -4,10 +4,10 @@ After=network.target
 
 [Service]
 Type=simple
-User=bot
-Group=bot
-WorkingDirectory=/opt/prsk-discord.js
-ExecStart=/opt/prsk-discord.js/auto.sh
+User=yuki
+Group=yuki
+WorkingDirectory=/home/yuki/projects/nenetils.js
+ExecStart=/home/yuki/projects/nenetils.js/auto.sh
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -16,8 +16,8 @@ StandardError=journal
 # Security hardening
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/opt/prsk-discord.js
+ProtectHome=read-only
+ReadWritePaths=/home/yuki/projects/nenetils.js
 PrivateTmp=true
 
 [Install]
