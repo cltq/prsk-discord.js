@@ -43,7 +43,7 @@ function loadCommands(dir: string): void {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       loadCommands(fullPath);
-    } else if (entry.name.endsWith(".ts") || entry.name.endsWith(".js")) {
+    } else if ((entry.name.endsWith(".ts") || entry.name.endsWith(".js")) && !entry.name.endsWith(".d.ts")) {
       const mod = require(fullPath);
       const cmd: Command = mod.default ?? mod;
       if (cmd?.data && typeof cmd?.execute === "function") {
@@ -59,7 +59,7 @@ function loadEvents(dir: string): void {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       loadEvents(fullPath);
-    } else if (entry.name.endsWith(".ts") || entry.name.endsWith(".js")) {
+    } else if ((entry.name.endsWith(".ts") || entry.name.endsWith(".js")) && !entry.name.endsWith(".d.ts")) {
       const mod = require(fullPath);
       const event = mod.default ?? mod;
       if (event.once) {
