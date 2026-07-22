@@ -10,35 +10,29 @@ warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 err()  { echo -e "${RED}[-]${NC} $1"; }
 
 SERVICE_NAME="prsk-discord"
-SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-SCRIPT_DIR="$(pwd)"
+USER_DIR="${HOME}/.config/systemd/user"
+SERVICE_FILE="${USER_DIR}/${SERVICE_NAME}.service"
 
 # ---- Flags ----
 case "${1:-}" in
     --install-systemd)
-        if [ "$(id -u)" -ne 0 ]; then
-            err "ต้องรันด้วย root (sudo)"
-            exit 1
-        fi
-        msg "ติดตั้ง systemd service..."
+        msg "ติดตั้ง user systemd service..."
+        mkdir -p "$USER_DIR"
         cp "$SCRIPT_DIR/prsk-discord.service" "$SERVICE_FILE"
-        systemctl daemon-reload
-        systemctl enable "$SERVICE_NAME"
-        systemctl start "$SERVICE_NAME"
+        systemctl --user daemon-reload
+        systemctl --user enable "$SERVICE_NAME"
+        systemctl --user start "$SERVICE_NAME"
+        loginctl enable-linger "$(whoami)" 2>/dev/null || true
         msg "Service ติดตั้งแล้ว — สถานะ:"
-        systemctl status "$SERVICE_NAME" --no-pager || true
+        systemctl --user status "$SERVICE_NAME" --no-pager || true
         exit 0
         ;;
     --remove)
-        if [ "$(id -u)" -ne 0 ]; then
-            err "ต้องรันด้วย root (sudo)"
-            exit 1
-        fi
-        msg "ลบ systemd service..."
-        systemctl stop "$SERVICE_NAME" 2>/dev/null || true
-        systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+        msg "ลบ user systemd service..."
+        systemctl --user stop "$SERVICE_NAME" 2>/dev/null || true
+        systemctl --user disable "$SERVICE_NAME" 2>/dev/null || true
         rm -f "$SERVICE_FILE"
-        systemctl daemon-reload
+        systemctl --user daemon-reload
         msg "ลบเรียบร้อย"
         exit 0
         ;;

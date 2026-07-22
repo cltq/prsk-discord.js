@@ -4,20 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=yuki
-Group=yuki
-WorkingDirectory=/home/yuki/projects/nenetils.js
-ExecStart=/home/yuki/projects/nenetils.js/auto.sh
+WorkingDirectory=%h/projects/nenetils.js
+ExecStart=%h/projects/nenetils.js/auto.sh
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 
-# Security hardening
-NoNewPrivileges=true
-ProtectSystem=strict
-ReadWritePaths=/home/yuki/projects/nenetils.js /home/yuki/.bun /tmp
-PrivateTmp=true
-
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
