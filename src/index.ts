@@ -1,6 +1,8 @@
-import "dotenv/config";
+import * as dotenv from "dotenv";
 import * as fs from "node:fs";
 import * as path from "node:path";
+
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 import * as http from "node:http";
 import {
   Client,
