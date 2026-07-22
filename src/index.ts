@@ -132,16 +132,14 @@ const HEALTH_HOST = "0.0.0.0";
 const HEALTH_PORT = 8899;
 
 function runHealthServer(): void {
-  const server = http.createServer((req, res) => {
-    req.socket.once("data", () => {
-      const status = botConnected ? 200 : 503;
-      const text = botConnected ? "ok" : "disconnected";
-      res.writeHead(status, {
-        "Content-Type": "text/plain",
-        Connection: "close",
-      });
-      res.end(`${status} ${text}`);
+  const server = http.createServer((_req, res) => {
+    const status = botConnected ? 200 : 503;
+    const text = botConnected ? "ok" : "disconnected";
+    res.writeHead(status, {
+      "Content-Type": "text/plain",
+      Connection: "close",
     });
+    res.end(`${status} ${text}`);
   });
   server.listen(HEALTH_PORT, HEALTH_HOST, () => {
     console.log(`Health check server listening on ${HEALTH_HOST}:${HEALTH_PORT}`);
