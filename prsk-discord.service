@@ -7,7 +7,6 @@ Type=simple
 User=yuki
 Group=yuki
 WorkingDirectory=/home/yuki/projects/nenetils.js
-EnvironmentFile=-/home/yuki/projects/nenetils.js/.env
 ExecStart=/home/yuki/projects/nenetils.js/auto.sh
 Restart=on-failure
 RestartSec=10

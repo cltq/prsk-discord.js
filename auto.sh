@@ -146,5 +146,13 @@ if [ ! -f .env ]; then
 fi
 
 set -a; source .env; set +a
+
+BOT_TOKEN_LEN=${#BOT_TOKEN}
+if [ "$BOT_TOKEN_LEN" -lt 20 ]; then
+    err "BOT_TOKEN ไม่ถูกต้อง (length=$BOT_TOKEN_LEN) — ตรวจสอบ .env"
+    exit 1
+fi
+msg "BOT_TOKEN: loaded (${BOT_TOKEN_LEN} chars)"
+
 msg "เริ่มบอท..."
 exec bun run start
