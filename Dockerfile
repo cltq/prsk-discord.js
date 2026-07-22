@@ -3,7 +3,7 @@ FROM oven/bun:latest
 WORKDIR /app
 
 COPY package.json bun.lock* ./
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists/*
 RUN bun install --frozen-lockfile
 
 COPY tsconfig.json ./
