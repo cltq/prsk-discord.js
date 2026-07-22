@@ -1,5 +1,5 @@
 [Unit]
-Description=SekaiUtils Discord Bot
+Description=PrskDiscord Bot
 After=network.target
 
 [Service]
@@ -7,6 +7,7 @@ Type=simple
 User=yuki
 Group=yuki
 WorkingDirectory=/home/yuki/projects/nenetils.js
+EnvironmentFile=-/home/yuki/projects/nenetils.js/.env
 ExecStart=/home/yuki/projects/nenetils.js/auto.sh
 Restart=on-failure
 RestartSec=10
@@ -16,8 +17,7 @@ StandardError=journal
 # Security hardening
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=/home/yuki/projects/nenetils.js
+ReadWritePaths=/home/yuki/projects/nenetils.js /home/yuki/.bun /tmp
 PrivateTmp=true
 
 [Install]

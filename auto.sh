@@ -8,6 +8,43 @@ msg()  { echo -e "${GREEN}[+]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 err()  { echo -e "${RED}[-]${NC} $1"; }
 
+SERVICE_NAME="prsk-discord"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+SCRIPT_DIR="$(pwd)"
+
+# ---- Flags ----
+case "${1:-}" in
+    --install-systemd)
+        if [ "$(id -u)" -ne 0 ]; then
+            err "ต้องรันด้วย root (sudo)"
+            exit 1
+        fi
+        msg "ติดตั้ง systemd service..."
+        cp "$SCRIPT_DIR/prsk-discord.service" "$SERVICE_FILE"
+        systemctl daemon-reload
+        systemctl enable "$SERVICE_NAME"
+        systemctl start "$SERVICE_NAME"
+        msg "Service ติดตั้งแล้ว — สถานะ:"
+        systemctl status "$SERVICE_NAME" --no-pager || true
+        exit 0
+        ;;
+    --remove)
+        if [ "$(id -u)" -ne 0 ]; then
+            err "ต้องรันด้วย root (sudo)"
+            exit 1
+        fi
+        msg "ลบ systemd service..."
+        systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+        systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+        rm -f "$SERVICE_FILE"
+        systemctl daemon-reload
+        msg "ลบเรียบร้อย"
+        exit 0
+        ;;
+esac
+
+# ---- Normal run (no flags) ----
+
 detect_os() {
     case "$(uname -s)" in
         Linux*)   echo linux;;
@@ -50,27 +87,14 @@ OS=$(detect_os)
 DISTRO=$(detect_distro)
 msg "ระบบ: $OS ($DISTRO)"
 
-# ---- Node.js ----
-NODE=
-for cmd in node; do
-    if command -v "$cmd" &>/dev/null; then
-        NODE=$(command -v "$cmd")
-        break
-    fi
-done
-
-if [ -z "$NODE" ]; then
-    warn "ไม่พบ Node.js กำลังติดตั้ง..."
-    case $OS in
-        linux) install_pkg nodejs ;;
-        macos)
-            if command -v brew &>/dev/null; then brew install node
-            else err "กรุณาติดตั้ง Node.js จาก https://nodejs.org"; exit 1; fi ;;
-        windows) err "กรุณาติดตั้ง Node.js จาก https://nodejs.org"; exit 1 ;;
-    esac
-    NODE=$(command -v node)
+# ---- Bun ----
+if ! command -v bun &>/dev/null; then
+    warn "ไม่พบ Bun กำลังติดตั้ง..."
+    curl -fsSL https://bun.sh/install | bash
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
 fi
-msg "Node.js: $($NODE --version 2>&1)"
+msg "Bun: $(bun --version 2>&1)"
 
 # ---- ffmpeg ----
 if ! command -v ffmpeg &>/dev/null; then
@@ -106,12 +130,12 @@ else
     warn "ไม่พบ git — ข้ามการตรวจสอบอัปเดต"
 fi
 
-# ---- npm install & build ----
+# ---- bun install & build ----
 msg "ติดตั้ง dependencies..."
-npm install --omit=dev
+bun install --frozen-lockfile
 
 msg "Build TypeScript..."
-npx tsc
+bun run build
 
 # ---- .env ----
 if [ ! -f .env ]; then
@@ -122,4 +146,4 @@ fi
 
 set -a; source .env; set +a
 msg "เริ่มบอท..."
-exec node dist/index.js
+exec bun run start
