@@ -1,15 +1,15 @@
-FROM node:20-slim
+FROM oven/bun:latest
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lock* ./
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
-RUN npm ci --omit=dev
+RUN bun install --frozen-lockfile --production
 
 COPY tsconfig.json ./
 COPY src ./src
-RUN npx tsc
+RUN bun run build
 
 EXPOSE 8899
 
-CMD ["node", "dist/index.js"]
+CMD ["bun", "run", "start"]
