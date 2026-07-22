@@ -27,7 +27,7 @@ src/
 │   │   ├── git.ts                    # /git — Git log viewer
 │   │   └── changelog.ts             # /changelog — Changelog viewer (reads from changelogs/)
 │   ├── fumi/
-│   │   ├── auth.ts                   # /auth — OAuth2 verification
+│   │   ├── invite.ts                 # /invite — Bot invite link
 │   │   └── status.ts                 # /status — System status checks
 │   └── prosekai/
 │       ├── chart.ts                  # /chart — Song chart viewer (with autocomplete)
