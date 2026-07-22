@@ -2,15 +2,17 @@
 
 Discord bot สำหรับเกม Project Sekai พร้อมระบบเสียง TTS, ข้อมูลเกม, ยืนยันตัวตน OAuth2, และคำสั่งระบบ
 
+Built with **TypeScript** + **discord.js 14** + **@discordjs/voice**
+
 ## Features
 
 ### ข้อมูล Project Sekai
 | คำสั่ง | รายละเอียด |
 |---|---|
-| `/help` | แสดงข้อมูลบอทและคำสั่งทั้งหมด |
-| `/info` | แสดงข้อมูลบอท (ชื่อ, ID, เจ้าของ, อัปไทม์, status page) |
-| `/chart <song> [difficulty]` | ค้นหา chart เพลงพร้อมแสดงรูปภาพ |
-| `/songs [page]` | แสดงรายชื่อเพลงทั้งหมดใน Project Sekai |
+| `/help` | แสดงข้อมูลบอทและคำสั่งทั้งหมด (dropdown menu) |
+| `/info` | แสดงข้อมูลบอท (ชื่อ, ID, เจ้าของ, อัปไทม์, status page, GitHub/Gitea links) |
+| `/chart <song> [difficulty]` | ค้นหา chart เพลง (autocomplete) พร้อมแสดงรูปภาพ (JP / EN) |
+| `/songs [page]` | แสดงรายชื่อเพลงทั้งหมด (paginated, 20 ต่อหน้า) |
 | `/ข้อมูลการหาเพชร` | วิธีการฟาร์มเพชรในเซไก |
 | `/ข้อมูลการจัดทีม` | การจัดทีมและการทำคะแนน |
 | `/ข้อมูลเวลาเซิร์ฟ` | เวลาเซิร์ฟเวอร์ JP/Global |
@@ -21,7 +23,7 @@ Discord bot สำหรับเกม Project Sekai พร้อมระบ�
 |---|---|
 | `/join [channel] [auto_read]` | เชื่อมต่อห้องเสียง (default: auto_read=True) |
 | `/leave` | ออกจากห้องเสียง |
-| `/say <text> [voice]` | พูดข้อความด้วย TTS |
+| `/say <text> [voice]` | พูดข้อความด้วย TTS (Microsoft Edge TTS) |
 | `/voices` | แสดงรายชื่อเสียง TTS ที่ใช้งานได้ |
 
 ### ยืนยันตัวตน
@@ -33,28 +35,34 @@ Discord bot สำหรับเกม Project Sekai พร้อมระบ�
 | คำสั่ง | รายละเอียด |
 |---|---|
 | `/git [remote] [all]` | ดู commits จาก remote (GitHub / Gitea) |
+| `/uptime` | แสดง uptime ของบอท + ping latency |
+| `/restart` | รีสตาร์ทบอท (owner only) |
+| `/changelog` | ดู changelog ล่าสุด (autocomplete) |
+| `/status` | แสดงสถานะระบบ (Bot healthcheck, API, Discord API) |
 
-## Health Check
+## Tech Stack
 
-บอทเปิด HTTP server บนพอร์ต `88990` สำหรับ health check:
-```bash
-curl http://localhost:88990
-# => ok
-```
+- **Runtime:** Node.js 20+ / Bun
+- **Bot Framework:** discord.js 14
+- **Voice:** @discordjs/voice + ffmpeg
+- **TTS:** node-edge-tts (Microsoft Edge TTS)
+- **Language:** TypeScript (strict mode)
+- **Docker:** node:20-slim
 
 ## การติดตั้ง
 
-### ทั่วไป
+### ด้วย Bun (แนะนำ)
 ```bash
+git clone https://github.com/cltq/prsk-discord.js.git
+cd prsk-discord.js
 cp .env.example .env
-# แก้ไข .env: ใส่ BOT_TOKEN, DISCORD_CMD_AUTH_SK, DISCORD_BOT_OA2_LINK
-python3 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python3 bot.py
+# แก้ไข .env: ใส่ BOT_TOKEN, BOT_CREATOR, BOT_CLIENT_ID
+bun install
+bun run build
+bun run start
 ```
 
-### อัตโนมัติ
+### ด้วย auto.sh
 ```bash
 ./auto.sh
 ```
@@ -62,7 +70,15 @@ python3 bot.py
 ### Docker
 ```bash
 cp .env.example .env
-docker compose up -d
+# แก้ไข .env
+docker compose up -d --build
+```
+
+### Development
+```bash
+bun install
+bun run dev        # hot-reload ด้วย tsx
+bun run deploy     # register slash commands (ต้องใส่ BOT_CLIENT_ID ใน .env)
 ```
 
 ## ระบบ Auto-Read
@@ -77,38 +93,68 @@ docker compose up -d
 
 บอทจะ TTS ข้อความทุกข้อความในแชทที่มีชื่อเดียวกับห้องเสียงที่เชื่อมต่อ
 
+## Health Check
+
+บอทเปิด HTTP server บนพอร์ต `8899` สำหรับ health check:
+```bash
+curl http://localhost:8899
+# => 200 ok
+```
+
 ## โครงสร้างโปรเจกต์
 
 ```
-cogs/
-├── fumi/authorizer.py            # /auth — OAuth2 verification
-├── general/
-│   ├── help.py                   # /help — Bot info
-│   └── info.py                   # /info — Bot details, uptime
-├── prosekai/
-│   ├── chart/chart.py            # /chart, /songs — Chart viewer + song list
-│   └── info_summarize/           # Static info commands
-│       ├── crystal_info/
-│       ├── otp/
-│       ├── team/
-│       └── time/
-├── system/git.py                 # /git — Git log viewer
-└── voice/voice.py                # TTS voice commands (edge-tts)
-utils/
-├── embed_builder.py              # EmbedBuilder subclass (fluent API)
-├── guild_config.py               # JSON-based per-guild config
-└── admin_guard.py                # Admin allowlist + BOT_CREATOR check
-unused/                           # Archived/admin commands (not loaded)
+src/
+├── index.ts                          # Entry point — Client setup, health server, auto-reconnect
+├── deploy-commands.ts                # Slash command registration script
+├── types/
+│   └── index.ts                      # Shared TypeScript types (Command, GuildConfig)
+├── utils/
+│   ├── embed-builder.ts              # EmbedBuilder subclass (fluent API)
+│   ├── guild-config.ts              # JSON-based per-guild config
+│   └── admin-guard.ts               # Admin allowlist + BOT_CREATOR check
+├── commands/
+│   ├── general/                      # /help, /info
+│   ├── voice/                        # /join, /leave, /say, /voices
+│   ├── system/                       # /uptime, /restart, /git, /changelog
+│   ├── fumi/                         # /auth, /status
+│   └── prosekai/                     # /chart, /songs, + 4 static info commands
+├── events/
+│   ├── interaction-create.ts         # Routes slash commands + autocomplete
+│   ├── voice-state-update.ts         # Bot disconnect → reconnect loop
+│   └── message-create.ts             # Auto-read TTS for matching text channels
+└── data/
+    ├── crystal-info.txt              # Static info text (Thai)
+    ├── otp.txt
+    ├── team.txt
+    └── time.txt
+changelogs/                            # Changelog markdown files
+allowlist.txt                          # Admin allowlist (guildId: userId, username)
+guild_configs.json                     # Per-guild config (gitignored)
 ```
 
 ## ตัวแปรสภาพแวดล้อม (.env)
 
-| ตัวแปร | คำอธิบาย |
+| ตัวแปร | จำเป็น | คำอธิบาย |
+|---|---|---|
+| `BOT_TOKEN` | ✓ | Token ของ Discord bot |
+| `BOT_CREATOR` | ✓ | Discord user ID ของผู้สร้างบอท |
+| `BOT_CLIENT_ID` | ✓* | Application ID สำหรับ deploy commands |
+| `MACHINE_IP` | | IP สำหรับ status check (default: 127.0.0.1) |
+| `DISCORD_CMD_AUTH_SK` | | Secret key สำหรับคำสั่ง `/auth` |
+| `DISCORD_BOT_OA2_LINK` | | ลิงก์ OAuth2 สำหรับยืนยันตัวตน |
+
+\* จำเป็นเฉพาะตอน run `bun run deploy`
+
+## NPM Scripts
+
+| Script | คำอธิบาย |
 |---|---|
-| `BOT_TOKEN` | Token ของ Discord bot |
-| `BOT_CREATOR` | Discord user ID ของผู้สร้างบอท |
-| `DISCORD_CMD_AUTH_SK` | Secret key สำหรับคำสั่ง `/auth` |
-| `DISCORD_BOT_OA2_LINK` | ลิงก์ OAuth2 สำหรับยืนยันตัวตน |
+| `bun run build` | Compile TypeScript → `dist/` |
+| `bun run start` | รัน bot จาก `dist/index.js` |
+| `bun run dev` | รัน bot ด้วย hot-reload (tsx) |
+| `bun run deploy` | Register slash commands กับ Discord |
+| `bun run typecheck` | ตรวจสอบ TypeScript types |
 
 ## Credits
 

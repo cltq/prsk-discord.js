@@ -2,8 +2,14 @@
 .vscode
 .env
 
+# Node.js
+node_modules/
+dist/
+
+# Python (legacy)
 .venv
 __pycache__
 *.pyc
 
+# Runtime
 guild_configs.json

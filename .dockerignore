@@ -1,5 +1,9 @@
+.vscode
+.env
+node_modules/
+dist/
 .venv
-.git
 __pycache__
 *.pyc
-.env
+guild_configs.json
+.git

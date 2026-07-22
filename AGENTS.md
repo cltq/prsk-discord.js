@@ -1,97 +1,117 @@
 # AGENTS.md — สำหรับ AI Agents
 
-## โครงสร้างโปรเจกต์
+## โครงสร้างโปรเจกต์ (TypeScript / discord.js)
 
 ```
-cogs/                          # โหลดทั้งหมดอัตโนมัติ (ยกเว้น __init__.py)
-├── fumi/authorizer.py         # /auth — OAuth2 verification
-├── general/
-│   ├── help.py                # /help — Bot info
-│   └── info.py                # /info — Bot info embed
-├── system/
-│   ├── git.py                 # /git — Git log viewer
-│   ├── changelog.py           # /changelog — Changelog viewer (reads from changelogs/)
-│   └── uptime.py              # /uptime, /restart — Bot uptime + restart (owner only)
-├── voice/voice.py             # TTS voice commands (edge-tts)
-├── prosekai/chart/chart.py    # /chart, /songs — chart viewer + song list
-└── pjsk_info_summarize/       # Static info commands
-    ├── crystal_info/crystal_info.py   # /ข้อมูลการหาเพชร
-    ├── otp/onetime_password.py        # /ข้อมูลการยืมไอดี
-    ├── team/team.py                   # /ข้อมูลการจัดทีม
-    └── time/time.py                   # /ข้อมูลเวลาเซิร์ฟ
-utils/
-├── embed_builder.py           # EmbedBuilder subclass (fluent API)
-├── guild_config.py            # JSON-based per-guild config
-└── admin_guard.py             # Admin allowlist + BOT_CREATOR check
-changelogs/                    # Changelog markdown files (changelog-YYYY-MM-DD-HH-MM.md)
-unused/                        # ไม่โหลด, พร้อม reactivate
+src/
+├── index.ts                          # Entry point — Client setup, health server, auto-reconnect
+├── deploy-commands.ts                # Slash command registration script (BOT_CLIENT_ID required)
+├── types/
+│   └── index.ts                      # Shared TypeScript types (Command, GuildConfig)
+├── utils/
+│   ├── embed-builder.ts              # EmbedBuilder subclass (fluent API)
+│   ├── guild-config.ts              # JSON-based per-guild config (guild_configs.json)
+│   └── admin-guard.ts               # Admin allowlist + BOT_CREATOR check
+├── commands/
+│   ├── general/
+│   │   ├── help.ts                   # /help — Dynamic embed + select menu
+│   │   └── info.ts                   # /info — Bot info embed
+│   ├── voice/
+│   │   ├── join.ts                   # /join — Connect to voice channel
+│   │   ├── leave.ts                  # /leave — Disconnect from voice
+│   │   ├── say.ts                    # /say — TTS via edge-tts
+│   │   └── voices.ts                 # /voices — List TTS voices
+│   ├── system/
+│   │   ├── uptime.ts                 # /uptime — Bot uptime + ping
+│   │   ├── restart.ts               # /restart — Owner-only restart
+│   │   ├── git.ts                    # /git — Git log viewer
+│   │   └── changelog.ts             # /changelog — Changelog viewer (reads from changelogs/)
+│   ├── fumi/
+│   │   ├── auth.ts                   # /auth — OAuth2 verification
+│   │   └── status.ts                 # /status — System status checks
+│   └── prosekai/
+│       ├── chart.ts                  # /chart — Song chart viewer (with autocomplete)
+│       ├── songs.ts                  # /songs — Paginated song list
+│       ├── crystal-info.ts           # /ข้อมูลการหาเพชร
+│       ├── otp.ts                    # /ข้อมูลการยืมไอดี
+│       ├── team.ts                   # /ข้อมูลการจัดทีม
+│       └── time.ts                   # /ข้อมูลเวลาเซิร์ฟ
+├── events/
+│   ├── interaction-create.ts         # Routes slash commands + autocomplete
+│   ├── voice-state-update.ts         # Bot disconnect → reconnect loop
+│   └── message-create.ts             # Auto-read TTS for matching text channels
+└── data/
+    ├── crystal-info.txt              # Static info text (Thai)
+    ├── otp.txt
+    ├── team.txt
+    └── time.txt
+changelogs/                            # Changelog markdown files (changelog-YYYY-MM-DD-HH-MM.md)
+allowlist.txt                          # Admin allowlist (guildId: userId, username)
+guild_configs.json                     # Per-guild config (gitignored)
 ```
 
-GitHub repo: `https://github.com/cltq/sekaiutils-discord`
+GitHub repo: `https://github.com/cltq/prsk-discord.js`
 
 ## กฎและแนวทาง
 
-### Cog conventions
-- แต่ละ cog ต้องมี `async def setup(bot): await bot.add_cog(CogName(bot))`
-- ใช้ `@discord.app_commands.command()` สำหรับ slash commands
-- ใช้ `@app_commands.allowed_contexts()` และ `@app_commands.allowed_installs()` ตามความเหมาะสม
-- ใช้ `@app_commands.describe()` สำหรับอธิบายพารามิเตอร์
-- ใช้ `ephemeral=True` สำหรับการตอบกลับส่วนตัว
+### Command conventions
+- แต่ละ command file export default `{ data: SlashCommandBuilder, execute, autocomplete? }`
+- ใช้ `SlashCommandBuilder` สำหรับสร้าง slash commands
+- ใช้ `.setDMPermission(true/false)`, `.setContexts()`, `.setIntegrationTypes()` ตามความเหมาะสม
+- ใช้ `.addStringOption()` etc. สำหรับ parameters
+- ใช้ `ephemeral: true` สำหรับการตอบกลับส่วนตัว
+- Autocomplete: export `autocomplete` function พร้อม `.setAutocomplete(true)` on the option
 
 ### EmbedBuilder
-```python
-from utils.embed_builder import EmbedBuilder
+```typescript
+import { EmbedBuilder } from "../utils/embed-builder.js";
 
-EmbedBuilder.success("Title", "Description")     # สีเขียว
-EmbedBuilder.error("Title", "Description")       # สีแดง
-EmbedBuilder.warning("Title", "Description")     # สีเหลือง
-EmbedBuilder.info("Title", "Description")        # สีฟ้า
-EmbedBuilder.primary("Title", "Description")     # สีน้ำเงิน
-EmbedBuilder.hex("#FF00FF", "Title", "Text")     # สีกำหนดเอง
-EmbedBuilder("Title").set_color_hex("#AABBCC").add_inline_field("k", "v")
+EmbedBuilder.success("Title", "Description")     // สีเขียว
+EmbedBuilder.error("Title", "Description")       // สีแดง
+EmbedBuilder.warning("Title", "Description")     // สีเหลือง
+EmbedBuilder.info("Title", "Description")        // สีฟ้า
+EmbedBuilder.primary("Title", "Description")     // สีน้ำเงิน
+EmbedBuilder.hex("#FF00FF", "Title", "Text")     // สีกำหนดเอง
+new EmbedBuilder().setColorHex("#AABBCC").addInlineField("k", "v")
 ```
 
 ### Guild config
-```python
-from utils.guild_config import get_guild, set_guild
-cfg = get_guild(guild_id)       # คืนค่า dict
-set_guild(guild_id, key, val)   # กำหนดค่า
+```typescript
+import { getGuild, setGuild } from "../utils/guild-config.js";
+const cfg = getGuild(guildId);       // returns GuildConfig
+setGuild(guildId, "key", value);     // sets a key
 ```
 
 ### Admin guard
-```python
-from utils.admin_guard import admin_check, is_user_admin
+```typescript
+import { adminCheck, isUserAdmin } from "../utils/admin-guard.js";
 
-@admin_check()                  # decorator สำหรับ slash command
-async def cmd(self, i): ...
+// In command execute:
+if (!await adminCheck(interaction)) return;
 ```
 
 ### ข้อควรรู้
-- Bot ใช้ `discord.py` 2.5+, Python 3.13
-- Voice/TTS ใช้ edge-tts (Microsoft Edge TTS) + ffmpeg
-- Info commands โหลดข้อความจาก `.txt` files ใน directory ของตัวเอง
-- `unused/` contains archived/admin commands ที่ไม่ถูกโหลดอัตโนมัติ
-- `.env` ใช้ `python-dotenv` style (อ่านด้วย `set -a; source .env; set +a` ใน auto.sh)
-- Docker image: `python:3.13-slim` + ffmpeg
-- Changelogs เก็บใน `changelogs/` ชื่อไฟล์ `changelog-YYYY-MM-DD-HH-MM.md` (markdown, ไม่เขียนทับไฟล์เก่า)
+- Bot ใช้ `discord.js` 14.x + `@discordjs/voice`, Node.js 20+
+- Voice/TTS ใช้ `edge-tts` npm package + ffmpeg
+- Commands โหลดอัตโนมัติจาก `src/commands/` ด้วย recursive directory scan
+- Events โหลดจาก `src/events/` ด้วย same pattern
+- Data files อยู่ใน `src/data/` (อ่านด้วย `fs.readFileSync`)
+- `unused/` directory ถูกลบแล้ว (Python legacy)
+- `.env` ใช้ `dotenv` package (อ่านจาก `src/index.ts`)
+- Docker image: `node:20-slim` + ffmpeg
+- Deploy commands: `npm run deploy` (requires `BOT_CLIENT_ID` in .env)
+- Build: `npm run build` (tsc) or `npm run dev` (tsx hot-reload)
+- Changelogs เก็บใน `changelogs/` ชื่อไฟล์ `changelog-YYYY-MM-DD-HH-MM.md` (markdown)
 
 ### Changelog rules (บังคับ)
 - **ทุก commit ต้องมี changelog** — เพิ่ม/แก้ไขไฟล์ใน `changelogs/` ทุกครั้ง
 - ถ้าวันเดียวกันมี changelog อยู่แล้ว → **append** ลงไฟล์เดิม ห้ามสร้างไฟล์ใหม่
 - ถ้าเป็นวันใหม่ → สร้างไฟล์ใหม่ `changelog-YYYY-MM-DD-HH-MM.md`
-- แต่ละรายการต้องลงท้ายด้วย commit link: `` [`short_id`](https://github.com/cltq/sekaiutils-discord/commit/short_id) ``
+- แต่ละรายการต้องลงท้ายด้วย commit link: `` [`short_id`](https://github.com/cltq/prsk-discord.js/commit/short_id) ``
 - ใช้ sections: `## Added`, `## Changed`, `## Fixed`, `## Removed` ตามความเหมาะสม
-- ตัวอย่าง:
-  ```markdown
-  ## Added
-  - **`/command`** — คำอธิบายสั้นๆ [`abc1234`](https://github.com/cltq/sekaiutils-discord/commit/abc1234)
 
-  ## Changed
-  - **`/command`** — แก้ไขอะไร [`def5678`](https://github.com/cltq/sekaiutils-discord/commit/def5678)
-  ```
-
-### การเพิ่ม cog ใหม่
-1. สร้าง `.py` file ใน `cogs/<category>/`
-2. cog class รับ `self.bot` ใน `__init__`
-3. ลงท้ายด้วย `async def setup(bot): await bot.add_cog(CogName(bot))`
-4. bot จะโหลดอัตโนมัติ (rglob `.py` ข้าม `__init__.py`)
+### การเพิ่ม command ใหม่
+1. สร้าง `.ts` file ใน `src/commands/<category>/`
+2. Export default `{ data: SlashCommandBuilder, execute: async (interaction) => {...} }`
+3. Bot จะโหลดอัตโนมัติ (recursive scan `src/commands/**/*.ts`)
+4. Run `npm run deploy` เพื่อ register commands กับ Discord

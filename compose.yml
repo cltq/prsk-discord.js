@@ -5,10 +5,10 @@ services:
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - BOT_CREATOR=${BOT_CREATOR}
-    command: python3 bot.py
+    command: node dist/index.js
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8899', timeout=5).status == 200 else 1)"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8899').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3

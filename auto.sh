@@ -50,29 +50,27 @@ OS=$(detect_os)
 DISTRO=$(detect_distro)
 msg "ระบบ: $OS ($DISTRO)"
 
-# ---- Python ----
-PYTHON=
-for cmd in python3 python; do
+# ---- Node.js ----
+NODE=
+for cmd in node; do
     if command -v "$cmd" &>/dev/null; then
-        PYTHON=$(command -v "$cmd")
+        NODE=$(command -v "$cmd")
         break
     fi
 done
 
-if [ -z "$PYTHON" ]; then
-    warn "ไม่พบ Python กำลังติดตั้ง..."
+if [ -z "$NODE" ]; then
+    warn "ไม่พบ Node.js กำลังติดตั้ง..."
     case $OS in
-        linux) install_pkg python3 ;;
+        linux) install_pkg nodejs ;;
         macos)
-            if command -v brew &>/dev/null; then brew install python
-            else err "กรุณาติดตั้ง Python จาก https://python.org"; exit 1; fi ;;
-        windows) err "กรุณาติดตั้ง Python จาก https://python.org"; exit 1 ;;
+            if command -v brew &>/dev/null; then brew install node
+            else err "กรุณาติดตั้ง Node.js จาก https://nodejs.org"; exit 1; fi ;;
+        windows) err "กรุณาติดตั้ง Node.js จาก https://nodejs.org"; exit 1 ;;
     esac
-    for cmd in python3 python; do
-        if command -v "$cmd" &>/dev/null; then PYTHON=$(command -v "$cmd"); break; fi
-    done
+    NODE=$(command -v node)
 fi
-msg "Python: $($PYTHON --version 2>&1)"
+msg "Node.js: $($NODE --version 2>&1)"
 
 # ---- ffmpeg ----
 if ! command -v ffmpeg &>/dev/null; then
@@ -108,22 +106,12 @@ else
     warn "ไม่พบ git — ข้ามการตรวจสอบอัปเดต"
 fi
 
-# ---- venv & deps ----
-if [ "$OS" = windows ]; then
-    msg "Windows: ไม่ใช้ virtual environment"
-    "$PYTHON" -m pip install -q -r requirements.txt
-    PIP="$PYTHON -m pip"
-    RUNNER="$PYTHON"
-else
-    if [ ! -d .venv ]; then
-        msg "สร้าง virtual environment..."
-        "$PYTHON" -m venv .venv
-    fi
-    msg "ติดตั้ง dependencies..."
-    .venv/bin/pip install -q -r requirements.txt
-    PIP=".venv/bin/pip"
-    RUNNER=".venv/bin/python3"
-fi
+# ---- npm install & build ----
+msg "ติดตั้ง dependencies..."
+npm install --omit=dev
+
+msg "Build TypeScript..."
+npx tsc
 
 # ---- .env ----
 if [ ! -f .env ]; then
@@ -134,4 +122,4 @@ fi
 
 set -a; source .env; set +a
 msg "เริ่มบอท..."
-exec $RUNNER bot.py
+exec node dist/index.js
