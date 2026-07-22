@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-dotenv.config({ path: path.join(__dirname, "..", ".env") });
+dotenv.config({ path: path.join(process.cwd(), ".env"), override: true });
 import * as http from "node:http";
 import {
   Client,
