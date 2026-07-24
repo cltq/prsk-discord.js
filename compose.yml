@@ -3,8 +3,10 @@ services:
     image: ghcr.io/cltq/prsk-discord.js:latest
     env_file: .env
     restart: unless-stopped
+    ports:
+      - "3995:3995"
     healthcheck:
-      test: ["CMD", "bun", "-e", "fetch('http://localhost:8899').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3995').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
