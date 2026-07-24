@@ -6,7 +6,7 @@ COPY package.json bun.lock* ./
 RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists/*
 RUN bun install --frozen-lockfile
 
-COPY tsconfig.json tsconfig.bot.json next.config.ts ./
+COPY tsconfig.json tsconfig.bot.json next.config.mjs ./
 COPY src ./src
 COPY app ./app
 RUN bun run build
