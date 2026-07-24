@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const filePath = join(process.cwd(), "status-data.json");
+    const dir = process.env.STATUS_DATA_DIR || process.cwd();
+    const filePath = join(dir, "status-data.json");
     const raw = await readFile(filePath, "utf-8");
     const data = JSON.parse(raw);
     const ok = data.status === "Online";

@@ -193,8 +193,9 @@ function writeStatusFile(): void {
       owner: cachedOwnerName ?? "unknown",
       timestamp: Date.now(),
     };
+    const dir = process.env.STATUS_DATA_DIR || process.cwd();
     fs.writeFileSync(
-      path.join(process.cwd(), "status-data.json"),
+      path.join(dir, "status-data.json"),
       JSON.stringify(data),
       "utf-8"
     );

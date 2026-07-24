@@ -2,12 +2,32 @@ services:
   bot:
     image: ghcr.io/cltq/prsk-discord.js:latest
     env_file: .env
+    environment:
+      - STATUS_DATA_DIR=/status-data
+    restart: unless-stopped
+    volumes:
+      - status-data:/status-data
+    command: ["bun", "run", "start"]
+
+  status:
+    image: ghcr.io/cltq/prsk-discord.js:latest
+    env_file: .env
+    environment:
+      - STATUS_DATA_DIR=/status-data
     restart: unless-stopped
     ports:
       - "3995:3995"
+    volumes:
+      - status-data:/status-data
+    command: ["bunx", "next", "start", "--port", "3995"]
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://localhost:3995/api/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on:
+      - bot
+
+volumes:
+  status-data:

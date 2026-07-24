@@ -26,7 +26,8 @@ const fallback: StatusData = {
 
 export async function GET() {
   try {
-    const filePath = join(process.cwd(), "status-data.json");
+    const dir = process.env.STATUS_DATA_DIR || process.cwd();
+    const filePath = join(dir, "status-data.json");
     const raw = await readFile(filePath, "utf-8");
     const data: StatusData = JSON.parse(raw);
     return NextResponse.json(data);
