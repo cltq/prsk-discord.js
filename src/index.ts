@@ -91,10 +91,14 @@ client.on(Events.ClientReady, async (readyClient) => {
   }
   console.log("Bot fully ready");
 
-  readyClient.user.setActivity({
-    type: ActivityType.Custom,
-    name: "Custom Status",
-    state: "meow! :D - Fumi",
+  readyClient.user.setPresence({
+    status: "dnd",
+    activities: [
+      {
+        type: ActivityType.Playing,
+        name: "Project Sekai: Colorful Stage! feat. Hatsune Miku",
+      },
+    ],
   });
 
   botConnected = true;
@@ -116,10 +120,14 @@ client.on(Events.ShardReconnecting, () => {
 async function keepAlive(): Promise<void> {
   while (!clientDestroyed) {
     try {
-      client.user?.setActivity({
-        type: ActivityType.Custom,
-        name: "Custom Status",
-        state: "meow! :D - Fumi",
+      client.user?.setPresence({
+        status: "dnd",
+        activities: [
+          {
+            type: ActivityType.Playing,
+            name: "Project Sekai: Colorful Stage! feat. Hatsune Miku",
+          },
+        ],
       });
     } catch {
       // ignore
