@@ -96,7 +96,7 @@ client.on(Events.ClientReady, async (readyClient) => {
     activities: [
       {
         type: ActivityType.Playing,
-        name: "Project Sekai: Colorful Stage! feat. Hatsune Miku",
+        name: "Project Sekai: Colorful Stage",
       },
     ],
   });
@@ -125,7 +125,7 @@ async function keepAlive(): Promise<void> {
         activities: [
           {
             type: ActivityType.Playing,
-            name: "Project Sekai: Colorful Stage! feat. Hatsune Miku",
+            name: "Project Sekai: Colorful Stage",
           },
         ],
       });
