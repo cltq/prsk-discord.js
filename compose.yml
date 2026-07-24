@@ -21,7 +21,7 @@ services:
       - status-data:/status-data
     command: ["bunx", "next", "start", "--port", "3995"]
     healthcheck:
-      test: ["CMD", "bun", "-e", "fetch('http://localhost:3995/api/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3995/prsk/api/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3

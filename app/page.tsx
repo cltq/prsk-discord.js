@@ -45,7 +45,7 @@ export default function StatusPage() {
 
     async function fetchStatus() {
       try {
-        const res = await fetch("/api/status", { cache: "no-store" });
+        const res = await fetch("/prsk/api/status", { cache: "no-store" });
         if (res.ok && active) {
           setData(await res.json());
         }
