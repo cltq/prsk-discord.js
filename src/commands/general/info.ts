@@ -2,8 +2,8 @@ import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.j
 import * as child_process from "node:child_process";
 import { EmbedBuilder } from "../../utils/embed-builder.js";
 
-const PRIMARY = "#5865F2";
-const OWNER_WEBSITE = "https://applefumi.xyz";
+const PRIMARY = "#FFFFFF";
+const OWNER_WEBSITE = "https://mapleji.xyz";
 const startTime = Date.now();
 
 function formatUptime(): string {
@@ -68,9 +68,10 @@ export default {
     embed.addInlineField("ชื่อ", interaction.client.user?.username ?? "?", false);
     embed.addInlineField("ID", interaction.client.user?.id ?? "?", false);
     embed.addInlineField("เจ้าของ", ownerDisplayStr, false);
-    embed.addInlineField("เว็บไซต์", `[applefumi.xyz](${OWNER_WEBSITE})`, false);
+    embed.addInlineField("เว็บไซต์", `[mapleji.xyz](${OWNER_WEBSITE})`, false);
     embed.addInlineField("อัปไทม์", formatUptime(), false);
-    embed.addInlineField("Status Page", "https://discordstatus.com", false);
+    embed.addInlineField("Status Page", "https://discordbotstatus.mapleji.xyz/prsk", false);
+    embed.addInlineField("Discord Status", "https://discordstatus.com", false);
 
     if (ghUrl) {
       const label = ghUrl.split("/").slice(-2).join("/");
