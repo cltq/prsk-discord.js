@@ -180,12 +180,17 @@ async function keepAlive(): Promise<void> {
 
 function writeStatusFile(): void {
   try {
+    const commandList = [...client.commands.values()].map((cmd) => ({
+      name: cmd.data.name,
+      description: cmd.data.description,
+    }));
     const data = {
       status: botConnected ? "Online" : "Offline",
       uptime: Date.now() - startTime,
       servers: client.guilds.cache.size,
       users: client.guilds.cache.reduce((sum, g) => sum + (g.memberCount ?? 0), 0),
-      commands: client.commands.size,
+      commands: commandList,
+      owner: cachedOwnerName ?? "unknown",
       timestamp: Date.now(),
     };
     fs.writeFileSync(

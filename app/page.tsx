@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+interface CommandEntry {
+  name: string;
+  description: string;
+}
+
 interface StatusData {
   status: string;
   uptime: number;
   servers: number;
   users: number;
-  commands: number;
+  commands: CommandEntry[];
+  owner: string;
   timestamp: number;
 }
 
@@ -72,7 +78,23 @@ export default function StatusPage() {
           <Row label="Uptime" value={data ? formatUptime(data.uptime) : "—"} />
           <Row label="Servers" value={data ? data.servers.toLocaleString() : "—"} />
           <Row label="Users" value={data ? data.users.toLocaleString() : "—"} />
-          <Row label="Commands" value={data ? String(data.commands) : "—"} />
+          <Row label="Owner" value={data?.owner ?? "—"} />
+        </div>
+
+        <div style={styles.sectionTitle}>Commands</div>
+        <div style={styles.grid}>
+          {data && data.commands.length > 0 ? (
+            data.commands.map((cmd) => (
+              <div key={cmd.name} style={styles.row}>
+                <span style={styles.commandName}>/{cmd.name}</span>
+                <span style={styles.commandDesc}>{cmd.description}</span>
+              </div>
+            ))
+          ) : (
+            <div style={styles.row}>
+              <span style={styles.label}>{data ? "No commands loaded" : "Loading..."}</span>
+            </div>
+          )}
         </div>
 
         <div style={styles.footer}>prsk-bot status</div>
@@ -112,6 +134,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     letterSpacing: "-0.02em",
   },
+  sectionTitle: {
+    fontSize: "0.75rem",
+    color: "#525252",
+    fontWeight: 500,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase" as const,
+    marginTop: "2rem",
+    marginBottom: "0.75rem",
+  },
   grid: {
     display: "flex",
     flexDirection: "column",
@@ -138,6 +169,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontVariantNumeric: "tabular-nums",
     color: "#a3a3a3",
+  },
+  commandName: {
+    fontSize: "0.8125rem",
+    fontWeight: 500,
+    color: "#d4d4d4",
+    fontVariantNumeric: "tabular-nums",
+  },
+  commandDesc: {
+    fontSize: "0.75rem",
+    color: "#525252",
+    fontWeight: 400,
+    textAlign: "right" as const,
+    maxWidth: "55%",
   },
   footer: {
     marginTop: "2rem",

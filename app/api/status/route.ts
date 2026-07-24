@@ -9,7 +9,8 @@ interface StatusData {
   uptime: number;
   servers: number;
   users: number;
-  commands: number;
+  commands: { name: string; description: string }[];
+  owner: string;
   timestamp: number;
 }
 
@@ -18,7 +19,8 @@ const fallback: StatusData = {
   uptime: 0,
   servers: 0,
   users: 0,
-  commands: 0,
+  commands: [],
+  owner: "unknown",
   timestamp: 0,
 };
 
