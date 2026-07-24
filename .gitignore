@@ -13,3 +13,7 @@ __pycache__
 
 # Runtime
 guild_configs.json
+status-data.json
+
+# Next.js
+.next/

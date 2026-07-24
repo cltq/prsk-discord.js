@@ -3,7 +3,6 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 dotenv.config({ path: path.join(process.cwd(), ".env"), override: true });
-import * as http from "node:http";
 import {
   Client,
   GatewayIntentBits,
@@ -26,6 +25,50 @@ let botConnected = false;
 let restartRequested = false;
 let clientDestroyed = false;
 export const startTime = Date.now();
+
+const STATUS_ACTIVITIES: { type: ActivityType; name: string }[] = [
+  { type: ActivityType.Playing, name: "Project Sekai: Colorful Stage" },
+  { type: ActivityType.Watching, name: "servers" },
+  { type: ActivityType.Watching, name: "owner" },
+  { type: ActivityType.Custom, name: "date & time" },
+];
+let statusIndex = 0;
+let cachedOwnerName: string | null = null;
+
+async function resolveActivityName(
+  activity: { type: ActivityType; name: string }
+): Promise<string> {
+  if (activity.name === "servers") {
+    return `in ${client.guilds.cache.size} servers`;
+  }
+  if (activity.name === "owner") {
+    if (!cachedOwnerName) {
+      const ownerId = process.env.BOT_CREATOR;
+      if (ownerId) {
+        try {
+          const user = await client.users.fetch(ownerId);
+          cachedOwnerName = user?.username ?? ownerId;
+        } catch {
+          cachedOwnerName = ownerId;
+        }
+      } else {
+        cachedOwnerName = "unknown";
+      }
+    }
+    return `owned by ${cachedOwnerName}`;
+  }
+  if (activity.name === "date & time") {
+    const now = new Date();
+    const bangkok = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+    const day = bangkok.getDate();
+    const month = bangkok.toLocaleString("en-US", { month: "short" });
+    const year = bangkok.getFullYear();
+    const hours = String(bangkok.getHours()).padStart(2, "0");
+    const minutes = String(bangkok.getMinutes()).padStart(2, "0");
+    return `${day} ${month} ${year} ${hours}:${minutes}`;
+  }
+  return activity.name;
+}
 
 export function requestRestart(): void {
   restartRequested = true;
@@ -95,8 +138,8 @@ client.on(Events.ClientReady, async (readyClient) => {
     status: "dnd",
     activities: [
       {
-        type: ActivityType.Playing,
-        name: "Project Sekai: Colorful Stage",
+        type: STATUS_ACTIVITIES[0].type,
+        name: STATUS_ACTIVITIES[0].name,
       },
     ],
   });
@@ -120,38 +163,39 @@ client.on(Events.ShardReconnecting, () => {
 async function keepAlive(): Promise<void> {
   while (!clientDestroyed) {
     try {
+      const current = STATUS_ACTIVITIES[statusIndex % STATUS_ACTIVITIES.length];
+      const activityName = await resolveActivityName(current);
       client.user?.setPresence({
         status: "dnd",
-        activities: [
-          {
-            type: ActivityType.Playing,
-            name: "Project Sekai: Colorful Stage",
-          },
-        ],
+        activities: [{ type: current.type, name: activityName }],
       });
+      statusIndex++;
+      writeStatusFile();
     } catch {
       // ignore
     }
-    await new Promise((r) => setTimeout(r, 60000));
+    await new Promise((r) => setTimeout(r, 25000));
   }
 }
 
-const HEALTH_HOST = "0.0.0.0";
-const HEALTH_PORT = 8899;
-
-function runHealthServer(): void {
-  const server = http.createServer((_req, res) => {
-    const status = botConnected ? 200 : 503;
-    const text = botConnected ? "ok" : "disconnected";
-    res.writeHead(status, {
-      "Content-Type": "text/plain",
-      Connection: "close",
-    });
-    res.end(`${status} ${text}`);
-  });
-  server.listen(HEALTH_PORT, HEALTH_HOST, () => {
-    console.log(`Health check server listening on ${HEALTH_HOST}:${HEALTH_PORT}`);
-  });
+function writeStatusFile(): void {
+  try {
+    const data = {
+      status: botConnected ? "Online" : "Offline",
+      uptime: Date.now() - startTime,
+      servers: client.guilds.cache.size,
+      users: client.guilds.cache.reduce((sum, g) => sum + (g.memberCount ?? 0), 0),
+      commands: client.commands.size,
+      timestamp: Date.now(),
+    };
+    fs.writeFileSync(
+      path.join(process.cwd(), "status-data.json"),
+      JSON.stringify(data),
+      "utf-8"
+    );
+  } catch {
+    // ignore
+  }
 }
 
 async function runBotForever(): Promise<void> {
@@ -194,7 +238,6 @@ async function runBotForever(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  runHealthServer();
   await runBotForever();
 }
 
