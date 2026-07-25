@@ -22,9 +22,15 @@ export default {
     if (!before.channel || after.channel) return;
 
     const guild = member.guild;
-    console.warn("Disconnected — attempting to reconnect immediately");
 
     const cfg = getGuild(guild.id);
+    if (!cfg.autojoin_enabled) {
+      console.log(`Autojoin disabled for guild ${guild.id} — skipping reconnect`);
+      return;
+    }
+
+    console.warn("Disconnected — attempting to reconnect immediately");
+
     const channelId = cfg.auto_read_channel_id || before.channel.id;
 
     for (let attempt = 0; attempt < 30; attempt++) {

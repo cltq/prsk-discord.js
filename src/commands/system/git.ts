@@ -15,16 +15,34 @@ const REMOTE_LABELS: Record<string, string> = {
 };
 
 function gitLog(remote: string, allCommits: boolean): string {
+  const count = allCommits ? "" : " -5";
   try {
-    child_process.execSync(`git fetch --quiet ${remote} main`, { timeout: 15000 });
-    const args = `git log ${remote}/main --oneline --no-merges${allCommits ? "" : " -5"}`;
-    const result = child_process.execSync(args, { timeout: 15000 }).toString().trim();
-    const lines = result.split("\n").filter(Boolean);
-    if (!lines.length) return "(no commits found)";
-    return lines.map((line, i) => `${i + 1}. ${line}`).join("\n");
+    child_process.execSync("git status", { timeout: 5000, stdio: "ignore" });
   } catch {
-    return "(failed to fetch log)";
+    return "(git repository not available)";
   }
+  try {
+    child_process.execSync(`git fetch --quiet ${remote}`, { timeout: 15000 });
+  } catch {
+    // fetch failed — fall back to local log
+  }
+  const branches = [
+    `${remote}/main`,
+    `${remote}/master`,
+    "HEAD",
+  ];
+  for (const ref of branches) {
+    try {
+      const args = `git log ${ref} --oneline --no-merges${count}`;
+      const result = child_process.execSync(args, { timeout: 15000 }).toString().trim();
+      const lines = result.split("\n").filter(Boolean);
+      if (!lines.length) continue;
+      return lines.map((line, i) => `${i + 1}. ${line}`).join("\n");
+    } catch {
+      // try next branch
+    }
+  }
+  return "(failed to fetch log)";
 }
 
 function remoteInfo(remote: string): { repoPath: string; host: string } | null {

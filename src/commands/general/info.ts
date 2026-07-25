@@ -59,7 +59,6 @@ export default {
   execute: async (interaction: ChatInputCommandInteraction) => {
     const ownerDisplayStr = await ownerDisplay(interaction.client);
     const ghUrl = remoteUrl("origin");
-    const giteaUrl = remoteUrl("gitea");
 
     const embed = EmbedBuilder.hex(PRIMARY, "ข้อมูลบอท", `ข้อมูลทั่วไปของ ${interaction.client.user?.username ?? "Bot"}`);
     if (interaction.client.user) {
@@ -76,10 +75,6 @@ export default {
     if (ghUrl) {
       const label = ghUrl.split("/").slice(-2).join("/");
       embed.addInlineField("GitHub", `[${label}](${ghUrl})`, false);
-    }
-    if (giteaUrl) {
-      const label = giteaUrl.split("/").slice(-2).join("/");
-      embed.addInlineField("Gitea", `[${label}](${giteaUrl})`, false);
     }
     embed.setFooter({ text: `Requested by ${interaction.user.displayName}` });
 
