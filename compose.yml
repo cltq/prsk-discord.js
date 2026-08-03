@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     volumes:
       - status-data:/status-data
-    command: ["bun", "run", "start"]
+    command: ["sh", "docker-entrypoint.sh"]
 
   status:
     image: ghcr.io/cltq/prsk-discord.js:latest

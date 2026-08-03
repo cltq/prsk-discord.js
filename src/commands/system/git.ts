@@ -1,7 +1,6 @@
 import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
-  ApplicationCommandOptionType,
 } from "discord.js";
 import * as child_process from "node:child_process";
 import { EmbedBuilder } from "../../utils/embed-builder.js";
@@ -14,27 +13,73 @@ const REMOTE_LABELS: Record<string, string> = {
   origin: "GitHub",
 };
 
+const DEFAULT_REPO = { host: "github.com", repoPath: "cltq/prsk-discord.js" };
+
+type RepoInfo = { host: string; repoPath: string };
+
+const MAX_LOG_LENGTH = 900;
+
+function hasGitRepo(): boolean {
+  try {
+    child_process.execSync("git rev-parse --is-inside-work-tree", {
+      timeout: 5000,
+      stdio: "pipe",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function parseRemoteUrl(url: string): RepoInfo | null {
+  const raw = url.replace(".git", "");
+  let parts: string[];
+  let host: string;
+  if (raw.startsWith("https://")) {
+    parts = raw.split("/");
+    host = parts[2] ?? "";
+  } else if (raw.includes(":") && raw.includes("@")) {
+    parts = raw.split(":")[1].split("/");
+    host = raw.split("@")[1].split(":")[0] ?? "";
+  } else {
+    return null;
+  }
+  if (parts.length >= 2 && host) {
+    return {
+      repoPath: `${parts[parts.length - 2]}/${parts[parts.length - 1]}`,
+      host,
+    };
+  }
+  return null;
+}
+
+function remoteInfo(remote: string): RepoInfo | null {
+  if (hasGitRepo()) {
+    try {
+      const url = child_process
+        .execSync(`git remote get-url ${remote}`, { timeout: 10000 })
+        .toString()
+        .trim();
+      const parsed = parseRemoteUrl(url);
+      if (parsed) return parsed;
+    } catch {
+      // fall through to default
+    }
+  }
+  return DEFAULT_REPO;
+}
+
 function gitLog(remote: string, allCommits: boolean): string {
   const count = allCommits ? "" : " -5";
-  try {
-    child_process.execSync("git status", { timeout: 5000, stdio: "ignore" });
-  } catch {
-    return "(git repository not available)";
-  }
-  try {
-    child_process.execSync(`git fetch --quiet ${remote}`, { timeout: 15000 });
-  } catch {
-    // fetch failed — fall back to local log
-  }
-  const branches = [
-    `${remote}/main`,
-    `${remote}/master`,
-    "HEAD",
-  ];
+  const branches = [`${remote}/main`, `${remote}/master`, "HEAD"];
   for (const ref of branches) {
     try {
-      const args = `git log ${ref} --oneline --no-merges${count}`;
-      const result = child_process.execSync(args, { timeout: 15000 }).toString().trim();
+      const result = child_process
+        .execSync(`git log ${ref} --oneline --no-merges${count}`, {
+          timeout: 15000,
+        })
+        .toString()
+        .trim();
       const lines = result.split("\n").filter(Boolean);
       if (!lines.length) continue;
       return lines.map((line, i) => `${i + 1}. ${line}`).join("\n");
@@ -42,32 +87,59 @@ function gitLog(remote: string, allCommits: boolean): string {
       // try next branch
     }
   }
-  return "(failed to fetch log)";
+  return "";
 }
 
-function remoteInfo(remote: string): { repoPath: string; host: string } | null {
+async function apiLog(repo: RepoInfo, allCommits: boolean): Promise<string> {
+  const perPage = allCommits ? 100 : 5;
   try {
-    const url = child_process.execSync(`git remote get-url ${remote}`, { timeout: 10000 }).toString().trim();
-    if (!url) return null;
-    const raw = url.replace(".git", "");
-    let parts: string[];
-    let host: string;
-    if (raw.startsWith("https://")) {
-      parts = raw.split("/");
-      host = parts[2];
-    } else if (raw.includes(":") && raw.includes("@")) {
-      parts = raw.split(":")[1].split("/");
-      host = raw.split("@")[1].split(":")[0];
-    } else {
-      return null;
-    }
-    if (parts.length >= 2) {
-      return { repoPath: `${parts[parts.length - 2]}/${parts[parts.length - 1]}`, host };
-    }
-    return null;
+    const res = await fetch(
+      `https://api.github.com/repos/${repo.repoPath}/commits?per_page=${perPage}`,
+      {
+        headers: {
+          Accept: "application/vnd.github+json",
+          "User-Agent": "prsk-discord.js",
+        },
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+    if (!res.ok) return "(failed to fetch log)";
+    const commits = (await res.json()) as Array<{
+      sha: string;
+      commit: { message: string };
+    }>;
+    if (!Array.isArray(commits) || commits.length === 0) return "(no commits found)";
+    return commits
+      .map((c, i) => `${i + 1}. ${c.sha.slice(0, 7)} ${c.commit.message.split("\n")[0]}`)
+      .join("\n");
   } catch {
-    return null;
+    return "(failed to fetch log)";
   }
+}
+
+function truncateLog(log: string): string {
+  if (log.length <= MAX_LOG_LENGTH) return log;
+  const cut = log.slice(0, MAX_LOG_LENGTH);
+  const lastNewline = cut.lastIndexOf("\n");
+  return `${cut.slice(0, lastNewline)}\n… (truncated)`;
+}
+
+async function fetchLog(remote: string, allCommits: boolean): Promise<string> {
+  if (hasGitRepo()) {
+    try {
+      child_process.execSync(`git fetch --quiet ${remote}`, { timeout: 15000 });
+    } catch {
+      // fetch failed — fall back to local log
+    }
+    const local = gitLog(remote, allCommits);
+    if (local) return local;
+  }
+  const repo = remoteInfo(remote);
+  if (repo) {
+    const viaApi = await apiLog(repo, allCommits);
+    if (viaApi) return viaApi;
+  }
+  return "(failed to fetch log)";
 }
 
 export default {
@@ -107,23 +179,20 @@ export default {
     const embed = EmbedBuilder.hex("#F05032", "📋 Git Log");
     embed.setFooter({ text: `Requested by ${interaction.user.displayName}` });
 
-    const log = gitLog(remote, all);
+    const log = truncateLog(await fetchLog(remote, all));
     const label = REMOTE_LABELS[remote] ?? remote;
     const info = remoteInfo(remote);
 
-    let fieldLabel: string;
-    let fieldValue: string;
-
     if (info) {
       const url = `https://${info.host}/${info.repoPath}`;
-      fieldLabel = `🔗 ${label} (using ${remote}/main) - ${remote}/${info.repoPath}`;
-      fieldValue = `[\`${info.repoPath}\`](${url})\n\`\`\`${log}\`\`\``;
+      embed.addInlineField(
+        `🔗 ${label} — ${info.repoPath}`,
+        `[\`${info.repoPath}\`](${url})\n\`\`\`${log}\`\`\``,
+        false,
+      );
     } else {
-      fieldLabel = `🔗 ${label} (using ${remote}/main)`;
-      fieldValue = `\`\`\`${log}\`\`\``;
+      embed.addInlineField(`🔗 ${label}`, `\`\`\`${log}\`\`\``, false);
     }
-
-    embed.addInlineField(fieldLabel, fieldValue, false);
 
     await interaction.followUp({ embeds: [embed.toJSON()], ephemeral });
   },

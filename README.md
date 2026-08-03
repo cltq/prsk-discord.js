@@ -160,8 +160,7 @@ journalctl -u prsk-discord -f
 | `BOT_CREATOR` | ✓ | Discord user ID ของผู้สร้างบอท |
 | `BOT_CLIENT_ID` | ✓* | Application ID สำหรับ deploy commands |
 | `MACHINE_IP` | | IP สำหรับ status check (default: 127.0.0.1) |
-| `DISCORD_CMD_AUTH_SK` | | Secret key สำหรับคำสั่ง `/auth` |
-| `DISCORD_BOT_OA2_LINK` | | ลิงก์ OAuth2 สำหรับยืนยันตัวตน / คำสั่ง `/invite` |
+| `DISCORD_BOT_OA2_LINK` | | ลิงก์ OAuth2 สำหรับคำสั่ง `/invite` |
 
 \* จำเป็นเฉพาะตอน run `bun run deploy`
 

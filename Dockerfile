@@ -14,6 +14,9 @@ RUN bunx next build
 
 RUN rm -rf node_modules && bun install --frozen-lockfile --production
 
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 3995
 
-CMD ["sh", "-c", "bun run start & bunx next start --port 3995"]
+CMD ["sh", "docker-entrypoint.sh"]
