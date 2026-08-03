@@ -26,49 +26,12 @@ let restartRequested = false;
 let clientDestroyed = false;
 export const startTime = Date.now();
 
-const STATUS_ACTIVITIES: { type: ActivityType; name: string }[] = [
-  { type: ActivityType.Playing, name: "Project Sekai: Colorful Stage" },
-  { type: ActivityType.Watching, name: "servers" },
-  { type: ActivityType.Watching, name: "owner" },
-  { type: ActivityType.Custom, name: "date & time" },
-];
-let statusIndex = 0;
+const STATUS_ACTIVITY = {
+  type: ActivityType.Streaming,
+  name: "Hi.",
+  url: "https://www.twitch.tv/celestianv",
+};
 let cachedOwnerName: string | null = null;
-
-async function resolveActivityName(
-  activity: { type: ActivityType; name: string }
-): Promise<string> {
-  if (activity.name === "servers") {
-    return `in ${client.guilds.cache.size} servers`;
-  }
-  if (activity.name === "owner") {
-    if (!cachedOwnerName) {
-      const ownerId = process.env.BOT_CREATOR;
-      if (ownerId) {
-        try {
-          const user = await client.users.fetch(ownerId);
-          cachedOwnerName = user?.username ?? ownerId;
-        } catch {
-          cachedOwnerName = ownerId;
-        }
-      } else {
-        cachedOwnerName = "unknown";
-      }
-    }
-    return `owned by ${cachedOwnerName}`;
-  }
-  if (activity.name === "date & time") {
-    const now = new Date();
-    const bangkok = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-    const day = bangkok.getDate();
-    const month = bangkok.toLocaleString("en-US", { month: "short" });
-    const year = bangkok.getFullYear();
-    const hours = String(bangkok.getHours()).padStart(2, "0");
-    const minutes = String(bangkok.getMinutes()).padStart(2, "0");
-    return `${day} ${month} ${year} ${hours}:${minutes}`;
-  }
-  return activity.name;
-}
 
 export function requestRestart(): void {
   restartRequested = true;
@@ -136,12 +99,7 @@ client.on(Events.ClientReady, async (readyClient) => {
 
   readyClient.user.setPresence({
     status: "dnd",
-    activities: [
-      {
-        type: STATUS_ACTIVITIES[0].type,
-        name: STATUS_ACTIVITIES[0].name,
-      },
-    ],
+    activities: [STATUS_ACTIVITY],
   });
 
   botConnected = true;
@@ -163,13 +121,6 @@ client.on(Events.ShardReconnecting, () => {
 async function keepAlive(): Promise<void> {
   while (!clientDestroyed) {
     try {
-      const current = STATUS_ACTIVITIES[statusIndex % STATUS_ACTIVITIES.length];
-      const activityName = await resolveActivityName(current);
-      client.user?.setPresence({
-        status: "dnd",
-        activities: [{ type: current.type, name: activityName }],
-      });
-      statusIndex++;
       writeStatusFile();
     } catch {
       // ignore
